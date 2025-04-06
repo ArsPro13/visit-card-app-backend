@@ -7,5 +7,5 @@ if __name__ == '__main__':
         from app.extensions import db
         db.create_all()
 
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False, ssl_context=('certs/cert.pem', 'certs/key.pem'))
 
