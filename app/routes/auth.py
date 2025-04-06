@@ -42,12 +42,24 @@ def login():
     access_token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    return jsonify({'access_token': access_token, 'refresh_token': refresh_token}), 200
-
+    return jsonify({
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'username': user.username
+    }), 200
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
     identity = str(get_jwt_identity())
+    user = User.query.get(identity)
+
+    if not user:
+        return jsonify({'msg': 'User not found'}), 404
+
     access_token = create_access_token(identity=identity)
-    return jsonify({'access_token': access_token}), 200
+
+    return jsonify({
+        'access_token': access_token,
+        'username': user.username
+    }), 200

@@ -2,6 +2,7 @@ from app.extensions import db
 
 class Card(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    img = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(120), nullable=False)
     job = db.Column(db.String(120), nullable=True)
     company_name = db.Column(db.String(120), nullable=True)
