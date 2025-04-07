@@ -42,8 +42,6 @@ def get_cards():
 def add_card():
     data = request.get_json()
 
-    print(data)
-
     name = data.get('name')
     job = data.get('job')
     company_name = data.get('companyName')
@@ -94,8 +92,6 @@ def add_card():
             new_card.competencies or []),
         'talkInfo': list(new_card.talk_info or [])
     }
-
-    print("Returning JSON:\n", json.dumps(response_payload, indent=2))
 
     return jsonify(response_payload), 200
 
