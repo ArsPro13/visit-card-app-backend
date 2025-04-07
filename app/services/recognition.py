@@ -23,5 +23,5 @@ def process_recognizing_speech(speech_text):
     random_number = random.randint(0, 10)
 
     return {
-        'speech_info': mocked_cards[random_number]["speech_info"]
+        'speech_info': f'Обсудили {speech_topics[random_number]}'
     }
