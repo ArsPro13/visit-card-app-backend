@@ -1,17 +1,18 @@
 from flask import Blueprint, jsonify, request
-from app.services.recognition import process_recognizing_image, process_recognizing_speech
+from flask_jwt_extended import jwt_required
+from app.services.recognition import get_mocked_summary, get_mocked_vcard, extract_summary, extract_vcard_from_image
 
 recognition_bp = Blueprint('recognition', __name__)
 
 
 @recognition_bp.route('/recognize_image', methods=['POST'])
+@jwt_required()
 def recognize_image():
     data = request.get_json()
     image = data.get('image')
 
-    # todo: add deepseek api integration (unavailable right now)
     try:
-        card = process_recognizing_image(image)
+        card = extract_vcard_from_image(image)
     except Exception:
         return {}, 500
 
@@ -19,13 +20,13 @@ def recognize_image():
 
 
 @recognition_bp.route('/recognize_speech', methods=['POST'])
+@jwt_required()
 def recognize_speech():
     data = request.get_json()
     speech_text = data.get('speech_text')
 
-    # todo: add deepseek api integration (unavailable right now)
     try:
-        speech_summary = process_recognizing_speech(speech_text)
+        speech_summary = extract_summary(speech_text)
     except Exception:
         return {}, 500
 

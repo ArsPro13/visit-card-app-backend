@@ -24,6 +24,7 @@ def get_cards():
                 'id': card.id,
                 'img': card.img or '',
                 'name': card.name,
+                'surname': card.surname,
                 'job': card.job,
                 'companyName': card.company_name,
                 'phones': card.phones if card.phones else [],
@@ -43,6 +44,7 @@ def add_card():
     data = request.get_json()
 
     name = data.get('name')
+    surname = data.get('surname')
     job = data.get('job')
     company_name = data.get('companyName')
     phones = data.get('phones', [])
@@ -56,8 +58,11 @@ def add_card():
 
     user_id = get_jwt_identity()
 
+    time.sleep(5)
+
     new_card = Card(
-        name=name,
+        name =name,
+        surname=surname,
         job=job,
         company_name=company_name,
         phones=phones,
@@ -81,6 +86,7 @@ def add_card():
         'id': new_card.id,
         'img': new_card.img or '',
         'name': new_card.name,
+        'surname': new_card.surname,
         'job': new_card.job,
         'companyName': new_card.company_name,
         'phones': list(new_card.phones or []),
@@ -99,14 +105,14 @@ def add_card():
 @cards_bp.route('/get_mocked_cards', methods=['GET'])
 def get_mocked_cards():
     names = [
-        "Alice Johnson", "Bob Smith", "Charlie Brown", "David Lee", "Emma Wilson",
-        "Sophia Martinez", "Ethan Walker", "Olivia Harris", "Liam Adams", "Ava Robinson",
-        "Michael Thompson", "Isabella Scott", "James White", "Mia Carter", "Benjamin Hall",
-        "Charlotte Green", "Daniel Wright", "Amelia Turner", "Matthew Lewis", "Harper Allen",
-        "Joseph Young", "Evelyn King", "Samuel Hill", "Abigail Baker", "Henry Nelson",
-        "Emily Perez", "Alexander Collins", "Scarlett Mitchell", "Lucas Roberts", "Grace Evans",
-        "William Clark", "Victoria Edwards", "Jack Morris", "Lily Cooper", "Oliver Stewart",
-        "Hannah Rivera", "Noah Sanchez", "Zoe Reed", "Jacob Bennett", "Madison Gray"
+        ("Alice", "Johnson"), ("Bob", "Smith"), ("Charlie", "Brown"), ("David", "Lee"), ("Emma", "Wilson"),
+        ("Sophia", "Martinez"), ("Ethan", "Walker"), ("Olivia", "Harris"), ("Liam", "Adams"), ("Ava", "Robinson"),
+        ("Michael", "Thompson"), ("Isabella", "Scott"), ("James", "White"), ("Mia", "Carter"), ("Benjamin", "Hall"),
+        ("Charlotte", "Green"), ("Daniel", "Wright"), ("Amelia", "Turner"), ("Matthew", "Lewis"), ("Harper", "Allen"),
+        ("Joseph", "Young"), ("Evelyn", "King"), ("Samuel", "Hill"), ("Abigail", "Baker"), ("Henry", "Nelson"),
+        ("Emily", "Perez"), ("Alexander", "Collins"), ("Scarlett", "Mitchell"), ("Lucas", "Roberts"), ("Grace", "Evans"),
+        ("William", "Clark"), ("Victoria", "Edwards"), ("Jack", "Morris"), ("Lily", "Cooper"), ("Oliver", "Stewart"),
+        ("Hannah", "Rivera"), ("Noah", "Sanchez"), ("Zoe", "Reed"), ("Jacob", "Bennett"), ("Madison", "Gray")
     ]
     jobs = [
         "Software Engineer", "Product Manager", "Data Scientist", "UX Designer", "Marketing Specialist",
@@ -130,14 +136,15 @@ def get_mocked_cards():
 
     time.sleep(7)
 
-    # Function to generate mock data
     def generate_mock_cards(n=5):
         visit_cards = []
         for i in range(1, n + 1):
+            name, surname = random.choice(names)
             visit_card = {
                 "id": i,
                 "img": f"https://example.com/avatar{i}.png",
-                "name": random.choice(names),
+                "name": name,
+                "surname": surname,
                 "job": random.choice(jobs),
                 "companyName": random.choice(companies),
                 "phones": [f"+1-555-{random.randint(1000, 9999)}"],

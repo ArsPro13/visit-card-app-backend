@@ -4,6 +4,7 @@ class Card(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     img = db.Column(db.Text, nullable=True)
     name = db.Column(db.String(120), nullable=False)
+    surname = db.Column(db.String(120), nullable=True)
     job = db.Column(db.String(120), nullable=True)
     company_name = db.Column(db.String(120), nullable=True)
     phones = db.Column(db.PickleType, nullable=True)
