@@ -104,23 +104,36 @@ def add_card():
 def delete_card(card_id):
     user_id = get_jwt_identity()
 
+    print(f"[DEBUG] Получен user_id из токена: {user_id}")
+    print(f"[DEBUG] Попытка удалить карточку с id: {card_id}")
+
     user_card = UserCard.query.filter_by(user_id=user_id, card_id=card_id).first()
+    print(f"[DEBUG] Найден user_card: {user_card}")
 
     if not user_card:
+        # Выведем все карточки юзера для наглядности
+        all_user_cards = UserCard.query.filter_by(user_id=user_id).all()
+        print(f"[DEBUG] Все карточки пользователя с id {user_id}: {[{'card_id': uc.card_id} for uc in all_user_cards]}")
+
         return jsonify({"message": "Card not found or unauthorized."}), 404
 
+    # Удаление связи user-card
     db.session.delete(user_card)
     db.session.commit()
 
+    # Проверка: остались ли еще связи с этой карточкой
     remaining_links = UserCard.query.filter_by(card_id=card_id).count()
+    print(f"[DEBUG] Осталось связей с card_id {card_id}: {remaining_links}")
 
     if remaining_links == 0:
         card = Card.query.get(card_id)
         if card:
+            print(f"[DEBUG] Удаляем саму карточку с id {card_id}")
             db.session.delete(card)
             db.session.commit()
 
     return jsonify({"message": "Card deleted successfully."}), 200
+
 
 
 @cards_bp.route('/get_mocked_cards', methods=['GET'])
