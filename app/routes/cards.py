@@ -1,4 +1,3 @@
-import time
 import json
 
 from flask import Blueprint, jsonify, request
@@ -58,8 +57,6 @@ def add_card():
 
     user_id = get_jwt_identity()
 
-    time.sleep(5)
-
     new_card = Card(
         name =name,
         surname=surname,
@@ -102,6 +99,30 @@ def add_card():
     return jsonify(response_payload), 200
 
 
+@cards_bp.route('/delete_card/<int:card_id>', methods=['DELETE'])
+@jwt_required()
+def delete_card(card_id):
+    user_id = get_jwt_identity()
+
+    user_card = UserCard.query.filter_by(user_id=user_id, card_id=card_id).first()
+
+    if not user_card:
+        return jsonify({"message": "Card not found or unauthorized."}), 404
+
+    db.session.delete(user_card)
+    db.session.commit()
+
+    remaining_links = UserCard.query.filter_by(card_id=card_id).count()
+
+    if remaining_links == 0:
+        card = Card.query.get(card_id)
+        if card:
+            db.session.delete(card)
+            db.session.commit()
+
+    return jsonify({"message": "Card deleted successfully."}), 200
+
+
 @cards_bp.route('/get_mocked_cards', methods=['GET'])
 def get_mocked_cards():
     names = [
@@ -133,8 +154,6 @@ def get_mocked_cards():
         "LinkedIn", "Twitter", "Facebook", "Instagram",
         "TikTok", "YouTube", "Snapchat", "Reddit", "Pinterest", "GitHub"
     ]
-
-    time.sleep(7)
 
     def generate_mock_cards(n=5):
         visit_cards = []
