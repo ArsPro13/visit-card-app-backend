@@ -98,6 +98,57 @@ def add_card():
 
     return jsonify(response_payload), 200
 
+@cards_bp.route('/update_card/<int:card_id>', methods=['PUT'])
+@jwt_required()
+def update_card(card_id):
+    data = request.get_json()
+    user_id = get_jwt_identity()
+
+    # Проверка: существует ли карта и принадлежит ли она пользователю
+    user_card = UserCard.query.filter_by(user_id=user_id, card_id=card_id).first()
+    if not user_card:
+        return jsonify({'error': 'Card not found or not authorized'}), 404
+
+    card = Card.query.get(card_id)
+    if not card:
+        return jsonify({'error': 'Card not found'}), 404
+
+    # Обновляем поля, если они пришли в запросе
+    card.name = data.get('name', card.name)
+    card.surname = data.get('surname', card.surname)
+    card.job = data.get('job', card.job)
+    card.company_name = data.get('companyName', card.company_name)
+    card.phones = data.get('phones', card.phones)
+    card.email = data.get('email', card.email)
+    card.address = data.get('address', card.address)
+    card.websites = data.get('websites', card.websites)
+    card.social_medias = data.get('socialMedias', card.social_medias)
+    competencies = data.get('competencies')
+    if competencies is not None:
+        card.competencies = ', '.join(competencies) if isinstance(competencies, list) else competencies
+    card.talk_info = data.get('talkInfo', card.talk_info)
+    card.img = data.get('img', card.img)
+
+    db.session.commit()
+
+    updated_payload = {
+        'id': card.id,
+        'img': card.img or '',
+        'name': card.name,
+        'surname': card.surname,
+        'job': card.job,
+        'companyName': card.company_name,
+        'phones': list(card.phones or []),
+        'email': list(card.email or []),
+        'address': card.address,
+        'websites': list(card.websites or []),
+        'socialMedias': list(card.social_medias or []),
+        'competencies': card.competencies.split(', ') if isinstance(card.competencies, str) else list(card.competencies or []),
+        'talkInfo': list(card.talk_info or [])
+    }
+
+    return jsonify(updated_payload), 200
+
 
 @cards_bp.route('/delete_card/<int:card_id>', methods=['DELETE'])
 @jwt_required()
@@ -111,17 +162,14 @@ def delete_card(card_id):
     print(f"[DEBUG] Найден user_card: {user_card}")
 
     if not user_card:
-        # Выведем все карточки юзера для наглядности
         all_user_cards = UserCard.query.filter_by(user_id=user_id).all()
         print(f"[DEBUG] Все карточки пользователя с id {user_id}: {[{'card_id': uc.card_id} for uc in all_user_cards]}")
 
         return jsonify({"message": "Card not found or unauthorized."}), 404
 
-    # Удаление связи user-card
     db.session.delete(user_card)
     db.session.commit()
 
-    # Проверка: остались ли еще связи с этой карточкой
     remaining_links = UserCard.query.filter_by(card_id=card_id).count()
     print(f"[DEBUG] Осталось связей с card_id {card_id}: {remaining_links}")
 
