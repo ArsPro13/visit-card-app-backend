@@ -1,8 +1,7 @@
-import random
+from gigachat import GigaChat
 import json
-import requests
 
-from key import APIKEY
+from key import API_KEY
 from openai import OpenAI
 
 
@@ -19,7 +18,6 @@ def extract_clean_json(text: str) -> str:
 
 
 def normalize_result(data: dict) -> dict:
-    """Приводит данные к нужным типам — строки и массивы, где необходимо"""
     fields = {
         'name': str,
         'surname': str,
@@ -51,7 +49,7 @@ def normalize_result(data: dict) -> dict:
 
 
 def extract_vcard_from_image(data_uri: str) -> dict:
-    client = OpenAI(api_key=APIKEY)
+    client = OpenAI(api_key="")
 
     if not data_uri.startswith('data:image/jpeg;base64,'):
         data_uri = f"data:image/jpeg;base64,{data_uri}"
@@ -110,15 +108,7 @@ def extract_vcard_from_image(data_uri: str) -> dict:
             'competencies': []
         }
 
-
 def extract_summary(text):
-    api_key = APIKEY
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + api_key
-    }
-
     prompt = (
         f"Текст общения: \"{text}\"\n\n"
         "Извлеки ключевые факты из текста. Каждый пункт должен быть формулирован как отдельное, связное и понятное предложение, "
@@ -129,31 +119,27 @@ def extract_summary(text):
         "Если невозможно извлечь ни одного факта — верни []"
     )
 
-    data = {
-        "model": "gpt-4o-mini",
-        "messages": [
-            {"role": "system", "content": "Ты — AI-помощник, извлекающий важные факты из заметок после общения."},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3
-    }
-
     retries = 0
     while retries < 2:
         try:
-            response = requests.post("https://api.openai.com/v1/chat/completions",
-                                     headers=headers,
-                                     data=json.dumps(data))
-            response.raise_for_status()
-            answer = response.json()["choices"][0]["message"]["content"].strip()
+            with GigaChat(credentials=API_KEY, verify_ssl_certs=False) as giga:
+                response = giga.chat(
+                    messages=[
+                        {"role": "system", "content": "Ты — AI-помощник, извлекающий важные факты из заметок после общения."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.3
+                )
+                answer = response.choices[0].message.content.strip()
+                summary = json.loads(answer)
 
-            summary = json.loads(answer)
-            if isinstance(summary, list) and all(isinstance(item, str) for item in summary):
-                return {'speech_info': summary}
-        except (json.JSONDecodeError, Exception):
+                if isinstance(summary, list) and all(isinstance(item, str) for item in summary):
+                    return {'speech_info': summary}
+        except (json.JSONDecodeError, Exception) as e:
             retries += 1
 
     return {'speech_info': []}
+
 
 
 def get_mocked_vcard(data_uri: str) -> dict:
