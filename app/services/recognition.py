@@ -4,7 +4,6 @@ import json
 from key import API_KEY
 from openai import OpenAI
 
-
 def extract_clean_json(text: str) -> str:
     """
     Удаляет лишние символы до первого '{' и после последнего '}'.
@@ -123,14 +122,9 @@ def extract_summary(text):
     while retries < 2:
         try:
             with GigaChat(credentials=API_KEY, verify_ssl_certs=False) as giga:
-                response = giga.chat(
-                    messages=[
-                        {"role": "system", "content": "Ты — AI-помощник, извлекающий важные факты из заметок после общения."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.3
-                )
+                response = giga.chat(prompt)
                 answer = response.choices[0].message.content.strip()
+                print(response.choices[0], "")
                 summary = json.loads(answer)
 
                 if isinstance(summary, list) and all(isinstance(item, str) for item in summary):
