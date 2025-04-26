@@ -5,9 +5,9 @@ from app.services.recognition import extract_summary, extract_vcard_from_texts
 recognition_bp = Blueprint('recognition', __name__)
 
 
-@recognition_bp.route('/recognize_texts', methods=['POST'])
+@recognition_bp.route('/recognize_image', methods=['POST'])
 @jwt_required()
-def recognize_texts():
+def recognize_image():
     data = request.get_json()
     lines = data.get('lines')
 
