@@ -5,10 +5,6 @@ from key import API_KEY
 from openai import OpenAI
 
 def extract_clean_json(text: str) -> str:
-    """
-    Удаляет лишние символы до первого '{' и после последнего '}'.
-    Возвращает чистую JSON-строку.
-    """
     start = text.find('{')
     end = text.rfind('}')
     if start == -1 or end == -1 or start > end:
@@ -47,65 +43,56 @@ def normalize_result(data: dict) -> dict:
     return normalized
 
 
-def extract_vcard_from_image(data_uri: str) -> dict:
-    client = OpenAI(api_key="")
+def extract_vcard_from_texts(lines: list[str]) -> dict:
+    joined = "\n".join(lines)
+    prompt = (
+        "Ты — AI-помощник, извлекающий данные с визитной карточки из фрагментов текста.\n\n"
+        "Даны следующие строки:\n"
+        f"{joined}\n\n"
+        "Классифицируй их и верни ТОЛЬКО JSON-объект без дополнительных комментариев, "
+        "со следующими полями:\n"
+        "name, surname, job, companyName, phones, email, address, websites, socialMedias, competencies.\n"
+        "- Если имя и фамилия оказались в одной строке — разложи их по полям name и surname.\n"
+        "- Строки — как строки, списки — как массивы.\n"
+        "- Если для какого-то поля данных нет — используй пустую строку или пустой массив.\n\n"
+        "Пример ответа:\n"
+        "{\n"
+        "  \"name\": \"Имя\",\n"
+        "  \"surname\": \"Фамилия\",\n"
+        "  \"job\": \"Должность\",\n"
+        "  \"companyName\": \"Компания\",\n"
+        "  \"phones\": [\"+7 (123) 456-78-90\"],\n"
+        "  \"email\": [\"user@example.com\"],\n"
+        "  \"address\": \"Улица, город, страна\",\n"
+        "  \"websites\": [\"https://example.com\"],\n"
+        "  \"socialMedias\": [\"https://linkedin.com/in/username\"],\n"
+        "  \"competencies\": [\"Управление проектами\", \"Продажи\"]\n"
+        "}"
+    )
 
-    if not data_uri.startswith('data:image/jpeg;base64,'):
-        data_uri = f"data:image/jpeg;base64,{data_uri}"
+    retries = 0
+    while retries < 2:
+        try:
+            with GigaChat(credentials=API_KEY, verify_ssl_certs=False) as giga:
+                response = giga.chat(prompt)
+                answer = response.choices[0].message.content.strip()
+                data = json.loads(extract_clean_json(answer))
+                return normalize_result(data)
+        except (json.JSONDecodeError, Exception):
+            retries += 1
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": (
-                                "Извлеки данные с визитной карточки.\n"
-                                "Верни ТОЛЬКО JSON БЕЗ КОММЕНТАРИЕВ, без описания и текста — только сам объект JSON со следующими полями:\n"
-                                "name, surname, job, companyName, phones, email, address, websites, socialMedias, competencies.\n"
-                                "Строки — как строки, списки — как массивы. Если данных нет — оставь пустыми.\n"
-                                "Пример:\n"
-                                "{ \"name\": \"Имя\", \"surname\": \"Фамилия\", ... }\n"
-                                "Поле email должно быть массивом даже при одном адресе."
-                            )
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": data_uri,
-                                "detail": "auto"
-                            }
-                        }
-                    ]
-                }
-            ],
-            max_tokens=700,
-            temperature=0.3
-        )
-
-        print("Использованные токены: запрос - ", response.usage.prompt_tokens, ", ответ - ",
-              response.usage.completion_tokens, sep="")
-
-        content = response.choices[0].message.content.strip()
-        return normalize_result(json.loads(extract_clean_json(content)))
-
-    except Exception as e:
-        print("Ошибка при извлечении данных с изображения:", e)
-        return {
-            'name': "",
-            'surname': "",
-            'job': "",
-            'companyName': "",
-            'phones': [],
-            'email': [],
-            'address': "",
-            'websites': [],
-            'socialMedias': [],
-            'competencies': []
-        }
+    return {
+        "name": "",
+        "surname": "",
+        "job": "",
+        "companyName": "",
+        "phones": [],
+        "email": [],
+        "address": "",
+        "websites": [],
+        "socialMedias": [],
+        "competencies": []
+    }
 
 def extract_summary(text):
     prompt = (
