@@ -2,7 +2,6 @@ from gigachat import GigaChat
 import json
 
 from key import API_KEY
-from openai import OpenAI
 
 def extract_clean_json(text: str) -> str:
     start = text.find('{')
